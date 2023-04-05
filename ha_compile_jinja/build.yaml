@@ -1,0 +1,14 @@
+---
+build_from:
+  aarch64: ghcr.io/hassio-addons/debian-base:6.2.5
+  amd64: ghcr.io/hassio-addons/debian-base:6.2.5
+codenotary:
+  base_image: efaden@gmail.com
+  signer: efaden@gmail.com
+labels:
+  org.opencontainers.image.title: >
+    Home Assistant Add-on: Home Assistant Jinja Compiler
+  org.opencontainers.image.description: >
+    Compiles .jinja files in the HA config directory into yaml automatically
+  org.opencontainers.image.source: "https://github.com/efaden/ha-addons"
+  org.opencontainers.image.licenses: "Apache License 2.0"
