@@ -14,44 +14,82 @@ if ! type prettier > /dev/null 2>&1; then
 fi
 
 remove() {
-  OUTPUT_FILE="$1${2/.jinja}"
-  echo "$1$2 deleted, removing: $OUTPUT_FILE"
-  rm -f "$OUTPUT_FILE"
+  DIRECTORY="$1"
+  ORIGINAL_FILE="$2"
+  OUTPUT_FILE="$3"
+  DATA_FILE="$3.data"
+
+  echo "$DIRECTORY$ORIGINAL_FILE deleted, removing: $DIRECTORY$OUTPUT_FILE and $DIRECTORY$DATA_FILE"
+  rm -f "$DIRECTORY$OUTPUT_FILE" "$DIRECTORY$DATA_FILE"
 }
 
 compile() {
-  echo "$1$2 changed, compiling to: $1${2/.jinja}"
-  ERROR_LOG_FILE="$1$2.errors.log"
-  OUTPUT_FILE="$1${2/.jinja}"
-  echo "# DO NOT EDIT: Generated from: $2 ($0)" > "$OUTPUT_FILE"
+  DIRECTORY="$1"
+  ORIGINAL_FILE="$2"
+  OUTPUT_FILE="$3"
+  EVENT="$4"
+  ERROR_LOG_FILE="$3.errors.log"
+  JINJA_FILE="$3.jinja"
+  DATA_FILE="$3.data"
+
+  echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling to: $DIRECTORY${FILE/.jinja}"
+
+  # Check for Data File
+  ARGS=()
+  if test -f $DIRECTORY$DATA_FILE; then
+    ARGS+=('-d' $DIRECTORY${DATA_FILE} '-f' 'yaml')
+  fi
+
+  echo "# DO NOT EDIT: Generated from: $JINJA_FILE ($0)" > "$DIRECTORY$OUTPUT_FILE"
   # Log any errors to an .errors.log file, delete if successful
-  if jinja "$1$2" >> "$OUTPUT_FILE" 2> "$ERROR_LOG_FILE"; then
-    (rm -f "$ERROR_LOG_FILE" || true)
-    echo "Formatting $OUTPUT_FILE with Prettier..."
-    prettier --write "$OUTPUT_FILE" --loglevel warn || true
+  if jinja ${ARGS[@]} "$DIRECTORY$JINJA_FILE" >> "$DIRECTORY$OUTPUT_FILE" 2> "$DIRECTORY$ERROR_LOG_FILE"; then
+    (rm -f "$DIRECTORY$ERROR_LOG_FILE" || true)
+    echo "Formatting $DIRECTORY$OUTPUT_FILE with Prettier..."
+    prettier --write "$DIRECTORY$OUTPUT_FILE" --loglevel warn || true
   else
-    (rm -f "$OUTPUT_FILE" || true)
+    (rm -f "$DIRECTORY$OUTPUT_FILE" || true)
     echo "Error compiling $1$2!"
-    if [ -f "$ERROR_LOG_FILE" ]; then cat "$ERROR_LOG_FILE" >&2; fi
+    if [ -f "$DIRECTORY$ERROR_LOG_FILE" ]; then cat "$DIRECTORY$ERROR_LOG_FILE" >&2; fi
   fi
 }
 
 echo "Compiling Jinja templates to YAML: $HASS_CONFIG_DIR/**/*.yaml.jinja"
 inotifywait -q -m -r -e modify,delete,create,move "$HASS_CONFIG_DIR" | while read DIRECTORY EVENT FILE; do
-  if [[ "$FILE" != *.yaml.jinja ]]; then continue; fi
 
-  case $EVENT in
-    MODIFY*)
-      compile "$DIRECTORY" "$FILE";;
-    CREATE*)
-      compile "$DIRECTORY" "$FILE";;
-    MOVED_TO*)
-      compile "$DIRECTORY" "$FILE";;
-    DELETE*)
-      remove "$DIRECTORY" "$FILE";;
-    MOVED_FROM*)
-      remove "$DIRECTORY" "$FILE";;
-  esac
+  if ([[ "$FILE" == *.yaml.jinja ]]); then
+    ## JINJA UPDATE
+    OUTPUT_FILE=${FILE/.jinja}
+    case $EVENT in
+      MODIFY*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      CREATE*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_TO*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      DELETE*)
+        remove "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_FROM*)
+        remove "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+    esac
+  elif ([[ "$FILE" == *.yaml.data ]] && [ ! -f ${FILE/.data/.jinja} ]); then 
+    ## DATA UPDATE
+    OUTPUT_FILE=${FILE/.data}
+    case $EVENT in
+      MODIFY*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      CREATE*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_TO*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      DELETE*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_FROM*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+    esac
+  else 
+    continue 
+  fi
+
   sleep 0.5
 done
 
