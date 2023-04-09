@@ -32,13 +32,16 @@ compile() {
   JINJA_FILE="$3.jinja"
   DATA_FILE="$3.data"
 
-  echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling to: $DIRECTORY${FILE/.jinja}"
-
+  WITH_DATA=0
   # Check for Data File
   ARGS=()
   if test -f $DIRECTORY$DATA_FILE; then
     ARGS+=('-d' $DIRECTORY${DATA_FILE} '-f' 'yaml')
+    WITH_DATA=1
   fi
+
+  echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling (with data = $WITH_DATS) to: $DIRECTORY${FILE/.jinja}"
+
 
   echo "# DO NOT EDIT: Generated from: $JINJA_FILE ($0)" > "$DIRECTORY$OUTPUT_FILE"
   # Log any errors to an .errors.log file, delete if successful
