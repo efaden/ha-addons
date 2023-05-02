@@ -41,7 +41,8 @@ compile() {
     WITH_DATA=1
   fi
 
-  ARGS+=('-D' timestamp `date +%s`)
+  TIMESTAMP=`date +%s`
+  ARGS+=('-D' timestamp $TIMESTAMP)
 
   echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling (with data = $WITH_DATA, timestamp = $TIMESTAMP) to: $DIRECTORY${FILE/.jinja}"
 
