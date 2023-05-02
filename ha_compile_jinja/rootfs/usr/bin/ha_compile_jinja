@@ -41,8 +41,10 @@ compile() {
     WITH_DATA=1
   fi
 
-  echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling (with data = $WITH_DATA) to: $DIRECTORY${FILE/.jinja}"
+  TIMESTAMP=`date +%s`
+  ARGS+=('-D' timestamp $TIMESTAMP)
 
+  echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling (with data = $WITH_DATA, timestamp = $TIMESTAMP) to: $DIRECTORY${FILE/.jinja}"
 
   echo "# DO NOT EDIT: Generated from: $JINJA_FILE ($0)" > "$DIRECTORY$OUTPUT_FILE"
   # Log any errors to an .errors.log file, delete if successful
