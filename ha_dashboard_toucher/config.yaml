@@ -1,0 +1,21 @@
+---
+name: Home Assistant Dashboard Toucher
+version: dev
+slug: ha_dashboard_toucher
+description: >
+  Watches UI directory for changes to yaml files and then touches all yamls within the dashboard directory.
+url: https://github.com/efaden/ha-addons
+codenotary: efaden@gmail.com
+startup: services
+init: false
+arch:
+  - aarch64
+  - amd64
+hassio_api: true
+hassio_role: manager
+homeassistant_api: true
+map:
+  - config:rw
+options:
+  packages: []
+  init_commands: []

@@ -1,0 +1,13 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: Home Assistant Jinja Compiler
+# Runs the jinja compiler
+# ==============================================================================
+declare -a options
+declare config_path
+
+bashio::log.info 'Starting ha_dashboard_toucher...'
+
+# Run the code server
+exec /usr/bin/ha_dashboard_toucher

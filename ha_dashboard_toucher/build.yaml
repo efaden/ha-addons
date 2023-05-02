@@ -1,0 +1,14 @@
+---
+build_from:
+  aarch64: ghcr.io/hassio-addons/debian-base:6.2.5
+  amd64: ghcr.io/hassio-addons/debian-base:6.2.5
+codenotary:
+  base_image: efaden@gmail.com
+  signer: efaden@gmail.com
+labels:
+  org.opencontainers.image.title: >
+    Home Assistant Add-on: Home Assistant Dashboard toucher.
+  org.opencontainers.image.description: >
+    Watches UI directory for changes to yaml files and then touches all yamls within the dashboard directory.
+  org.opencontainers.image.source: "https://github.com/efaden/ha-addons"
+  org.opencontainers.image.licenses: "Apache License 2.0"
