@@ -7,11 +7,9 @@ UI_LOVELACE="/config/ui-lovelace.yaml"
 echo "Monitoring for yaml changes outside of dashboards: $UI_DIRECTORY/**/*.yaml w/ Dashboards in $DASHBOARD_DIRECTORY and $UI_LOVELACE"
 inotifywait -q -m -r -e modify,delete,create,move "$UI_DIRECTORY" | while read DIRECTORY EVENT FILE; do
 
-  echo "$FILE, $DIRECTORY, $EVENT"
-
   if ([[ "$FILE" == *.yaml ]] && [[ "$DIRECTORY" != "$DASHBOARD_DIRECTORY/" ]]); then
     touch $DASHBOARD_DIRECTORY/* $UI_LOVELACE
-    echo "Touched $DASHBOARD_DIRECTORY/* and $UI_LOVELACE"
+    echo "Touched $DASHBOARD_DIRECTORY/* and $UI_LOVELACE due to $EVENT on $DIRECTORY$FILE"
     continue
   else 
     echo "Not touching from $EVENT on $DIRECTORY$FILE"
