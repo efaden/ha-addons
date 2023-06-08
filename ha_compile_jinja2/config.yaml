@@ -1,0 +1,22 @@
+---
+name: Home Assistant Compile Jinja v2
+version: dev
+slug: ha_compile_jinja_v2
+description: >
+  Compiles .jinja files in the HA config directory into yaml automatically using jinja2-cli
+url: https://github.com/efaden/ha-addons
+codenotary: efaden@gmail.com
+panel_icon: mdi:template
+startup: services
+init: false
+arch:
+  - aarch64
+  - amd64
+hassio_api: true
+hassio_role: manager
+homeassistant_api: true
+map:
+  - config:rw
+options:
+  packages: []
+  init_commands: []

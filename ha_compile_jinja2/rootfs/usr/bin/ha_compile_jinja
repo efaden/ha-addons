@@ -1,0 +1,100 @@
+#!/bin/bash
+set -euo pipefail
+HASS_CONFIG_DIR="/config"
+
+if ! type jinja2 > /dev/null 2>&1; then
+  echo "jinja2-cli must be installed: pip install jinja2-cli (https://pypi.org/project/jinja2-cli/)"
+  sleep 1
+  exit 1
+fi
+if ! type prettier > /dev/null 2>&1; then
+  echo "Prettier must be installed: apt-get install nodejs npm && npm install -g prettier"
+  sleep 1
+  exit 1
+fi
+
+remove() {
+  DIRECTORY="$1"
+  ORIGINAL_FILE="$2"
+  OUTPUT_FILE="$3"
+  DATA_FILE="$3.data"
+
+  echo "$DIRECTORY$ORIGINAL_FILE deleted, removing: $DIRECTORY$OUTPUT_FILE and $DIRECTORY$DATA_FILE"
+  rm -f "$DIRECTORY$OUTPUT_FILE" "$DIRECTORY$DATA_FILE"
+}
+
+compile() {
+  DIRECTORY="$1"
+  ORIGINAL_FILE="$2"
+  OUTPUT_FILE="$3"
+  EVENT="$4"
+  ERROR_LOG_FILE="$3.errors.log"
+  JINJA_FILE="$3.jinja"
+  DATA_FILE="$3.data"
+
+  echo "$DIRECTORY$ORIGINAL_FILE changed ($EVENT), compiling to: $DIRECTORY${FILE/.jinja}"
+
+  # Check for Data File
+  ARGS=('--format=yaml' '--extension=jinja2_slug.SlugExtension' '-D' "timestamp=`date +%s`" "$DIRECTORY$JINJA_FILE")
+  if test -f $DIRECTORY$DATA_FILE; then
+    #ARGS+=('-d' $DIRECTORY${DATA_FILE} '-f' 'yaml')
+    ARGS+=($DIRECTORY${DATA_FILE})
+  fi
+
+  ARGS+=()
+
+  echo "# DO NOT EDIT: Generated from: $JINJA_FILE ($0)" > "$DIRECTORY$OUTPUT_FILE"
+  # Log any errors to an .errors.log file, delete if successful
+
+  if jinja2 ${ARGS[@]} >> "$DIRECTORY$OUTPUT_FILE" 2> "$DIRECTORY$ERROR_LOG_FILE"; then
+    (rm -f "$DIRECTORY$ERROR_LOG_FILE" || true)
+    echo "Formatting $DIRECTORY$OUTPUT_FILE with Prettier..."
+    prettier --write "$DIRECTORY$OUTPUT_FILE" --loglevel warn || true
+  else
+    (rm -f "$DIRECTORY$OUTPUT_FILE" || true)
+    echo "Error compiling $1$2!"
+    if [ -f "$DIRECTORY$ERROR_LOG_FILE" ]; then cat "$DIRECTORY$ERROR_LOG_FILE" >&2; fi
+  fi
+}
+
+echo "Compiling Jinja templates to YAML: $HASS_CONFIG_DIR/**/*.yaml.jinja"
+inotifywait -q -m -r -e modify,delete,create,move "$HASS_CONFIG_DIR" | while read DIRECTORY EVENT FILE; do
+
+  if ([[ "$FILE" == *.yaml.jinja ]]); then
+    ## JINJA UPDATE
+    OUTPUT_FILE=${FILE/.jinja}
+    case $EVENT in
+      MODIFY*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      CREATE*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_TO*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      DELETE*)
+        remove "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_FROM*)
+        remove "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+    esac
+  elif ([[ "$FILE" == *.yaml.data ]] && [ ! -f ${FILE/.data/.jinja} ]); then 
+    ## DATA UPDATE
+    OUTPUT_FILE=${FILE/.data}
+    case $EVENT in
+      MODIFY*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      CREATE*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_TO*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      DELETE*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+      MOVED_FROM*)
+        compile "$DIRECTORY" "$FILE" "$OUTPUT_FILE" "$EVENT";;
+    esac
+  else 
+    continue 
+  fi
+
+  sleep 0.5
+done
+
+sleep 1
