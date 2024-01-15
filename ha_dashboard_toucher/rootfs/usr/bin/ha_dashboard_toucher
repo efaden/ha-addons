@@ -4,16 +4,37 @@ UI_DIRECTORY="/config/ui"
 DASHBOARD_DIRECTORY="/config/ui/dashboards"
 UI_LOVELACE="/config/ui-lovelace.yaml"
 
-echo "Monitoring for yaml changes outside of dashboards: $UI_DIRECTORY/**/*.yaml w/ Dashboards in $DASHBOARD_DIRECTORY and $UI_LOVELACE"
-inotifywait -q -m -r -e modify,delete,create,move "$UI_DIRECTORY" | while read DIRECTORY EVENT FILE; do
+UI_MINIMALIST_DIRECTORY="/config/ui_lovelace_minimalist"
+UI_MINIMALIST_DASHBOARD_DIRECTORY="/config/ui_lovelace_minimalist/dashboard"
 
-  if ([[ "$FILE" == *.yaml ]] && [[ "$DIRECTORY" != "$DASHBOARD_DIRECTORY/" ]]); then
+DIRECTORIES=()
+
+if [ -d $UI_DIRECTORY ]; then
+  DIRECTORIES+=($UI_DIRECTORY)
+fi
+
+if [ -d $UI_MINIMALIST_DIRECTORY ]; then
+  DIRECTORIES+=($UI_MINIMALIST_DIRECTORY)
+fi
+
+
+echo "Monitoring for yaml changes outside of dashboards: "
+echo "  -- $UI_DIRECTORY/**/*.yaml w/ Dashboards in $DASHBOARD_DIRECTORY and $UI_LOVELACE"
+echo "  -- $UI_MINIMALIST_DIRECTORY/**/*.yaml w/ Dashboards in $UI_MINIMALIST_DASHBOARD_DIRECTORY"
+inotifywait -q -m -r -e modify,delete,create,move "${DIRECTORIES[@]}" | while read DIRECTORY EVENT FILE; do
+
+  echo "$FILE, $DIRECTORY, $EVENT"
+
+  if ([[ "$FILE" != *.yaml ]]); then
+    echo "Not touching from $EVENT on $DIRECTORY$FILE"
+  elif ([[ "$DIRECTORY" =~ "$UI_MINIMALIST_DIRECTORY/" ]] && [[ "$DIRECTORY" != "$UI_MINIMALIST_DASHBOARD_DIRECTORY/" ]]); then
+    find "$UI_MINIMALIST_DASHBOARD_DIRECTORY" -type f -name "*.yaml" -exec touch {} +
+    echo "Touched $UI_MINIMALIST_DASHBOARD_DIRECTORY/*"
+  elif ([[ "$DIRECTORY" =~ "$UI_DIRECTORY/" ]] && [[ "$DIRECTORY" != "$DASHBOARD_DIRECTORY/" ]]); then
     touch $DASHBOARD_DIRECTORY/* $UI_LOVELACE
-    echo "Touched $DASHBOARD_DIRECTORY/* and $UI_LOVELACE due to $EVENT on $DIRECTORY$FILE"
-    continue
+    echo "Touched $DASHBOARD_DIRECTORY/* and $UI_LOVELACE"
   else 
     echo "Not touching from $EVENT on $DIRECTORY$FILE"
-    continue 
   fi
 
   sleep 0.5
