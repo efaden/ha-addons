@@ -1,0 +1,20 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Add-on: Home Assistant Jinja Compiler
+# Runs the jinja compiler
+# ==============================================================================
+declare -a options
+declare config_path
+
+# Declare variables
+declare js_files
+
+## Get the 'message' key from the user config options.
+js_files=$(bashio::config 'js_files')
+
+bashio::log.info 'Starting ha_compressjs...'
+bashio::log.info "Watching ${js_files}"
+
+# Run the code server
+exec /usr/bin/ha_compressjs "${js_files}"
