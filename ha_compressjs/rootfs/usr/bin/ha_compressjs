@@ -1,0 +1,86 @@
+#!/bin/bash
+set -euo pipefail
+
+## Config
+CONFIG_DIRECTORY="/config"
+HACS_DIRECTORY="${CONFIG_DIRECTORY}/www"
+UGLIFYJS_DIRECTORY="${CONFIG_DIRECTORY}/www/compressjs"
+OUTPUT_FILE="${UGLIFYJS_DIRECTORY}/compressed.js"
+ERROR_FILE="${UGLIFYJS_DIRECTORY}/compressed.log"
+INPUT_FILE="${UGLIFYJS_DIRECTORY}/input"
+
+CLI_FILES="$@"
+
+## Globals
+filesToWatch=""
+filesToCompile=""
+
+# Debug
+DEBUG=1
+
+function log_info()  {
+  echo $@
+}
+
+function log_debug() {
+  [ $DEBUG != 0 ] && echo $@
+}
+
+## Init
+if ! type uglifyjs > /dev/null 2>&1; then
+  log_info "uglifyjs must be installed)"
+  sleep 1
+  exit 1
+fi
+
+if [ ! -d ${UGLIFYJS_DIRECTORY} ]; then
+  mkdir -p ${UGLIFYJS_DIRECTORY}
+fi
+
+function compile() {
+  log_info "Compiling to ${OUTPUT_FILE}"
+  if uglifyjs ${filesToCompile[@]} -o ${OUTPUT_FILE} -c -m &> ${ERROR_FILE}; then
+    ## COMPILED
+    (rm -f "${ERROR_FILE}" || true)
+    log_info "Compiled to ${OUTPUT_FILE} ..."
+    gzip -k -9 -f ${OUTPUT_FILE}
+  else
+    ## ERROR
+    (rm -f "${OUTPUT_FILE}" || true)
+    log_info "Error compiling ${OUTPUT_FILE}!"
+    if [ -f "${ERROR_FILE}" ]; then cat "${ERROR_FILE}" >&2; fi
+  fi
+}
+
+function readInput() {
+  if [ ! -f {$INPUT_FILE} ]; then 
+    readarray -t filesToWatch < ${INPUT_FILE}
+  fi
+
+  filesToWatch+=("${CLI_FILES[@]}")
+  filesToCompile=("${filesToWatch[@]}")
+
+  filesToWatch+=($INPUT_FILE)
+
+  log_debug "CompressJS files (${filesToCompile[@]}) to ${OUTPUT_FILE} and watching (${filesToWatch[@]})"
+}
+
+readInput $@
+
+if [ ! -f ${OUTPUT_FILE} ]; then 
+  compile
+fi
+
+# inotifywait -q -m -r -e modify,delete,create,move "$HACS_DIRECTORY" | while read DIRECTORY EVENT FILE; do
+
+inotifywait -q -m -r -e modify,delete,create,move ${filesToWatch[@]} | while read FILE EVENT; do
+  echo "$FILE updated.... "
+  if [ "$FILE" = "$INPUT_FILE" ]; then
+    readInput
+  fi
+  
+  compile
+  sleep 0.5
+done
+
+sleep 1
