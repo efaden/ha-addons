@@ -1,0 +1,56 @@
+#!/bin/bash
+set -euo pipefail
+CONFIG_DIRECTORY="/config"
+HACS_DIRECTORY="${CONFIG_DIRECTORY}/www"
+UGLIFYJS_DIRECTORY="${CONFIG_DIRECTORY}/www/uglifyjs"
+OUTPUT_FILE="${UGLIFYJS_DIRECTORY}/uglified.js"
+ERROR_FILE="${UGLIFYJS_DIRECTORY}/uglified.log"
+INPUT_FILE="${UGLIFYJS_DIRECTORY}/input"
+
+if ! type uglifyjs > /dev/null 2>&1; then
+  echo "uglifyjs must be installed)"
+  sleep 1
+  exit 1
+fi
+
+if [ ! -d ${UGLIFYJS_DIRECTORY} ]; then
+  mkdir -p ${UGLIFYJS_DIRECTORY}
+fi
+
+if [ ! -f {$INPUT_FILE} ]; then 
+  readarray -t filesToWatch < ${INPUT_FILE}
+fi
+
+filesToWatch+=($1)
+
+echo "UglifyJS files ${filesToWatch[@]} to ${OUTPUT_FILE}"
+
+if [ ! -f ${OUTPUT_FILE} ]; then 
+  if uglifyjs ${filesToWatch[@]} -o ${OUTPUT_FILE} -c -m &> ${ERROR_FILE}; then
+    (rm -f "${ERROR_FILE}" || true)
+    echo "Compiled to ${OUTPUT_FILE} ..."
+    gzip -k ${OUTPUT_FILE}
+  else
+    (rm -f "${OUTPUT_FILE}" || true)
+    echo "Error compiling ${OUTPUT_FILE}!"
+    if [ -f "${ERROR_FILE}" ]; then cat "${ERROR_FILE}" >&2; fi
+  fi
+fi
+
+# inotifywait -q -m -r -e modify,delete,create,move "$HACS_DIRECTORY" | while read DIRECTORY EVENT FILE; do
+inotifywait -q -m -r -e modify,delete,create,move ${filesToWatch[@]} | while read FILE EVENT; do
+  echo "$FILE"
+  if uglifyjs ${filesToWatch[@]} -o ${OUTPUT_FILE} -c -m &> ${ERROR_FILE}; then
+    (rm -f "${ERROR_FILE}" || true)
+    echo "Compiled to ${OUTPUT_FILE} ..."
+    gzip -k ${OUTPUT_FILE}
+  else
+    (rm -f "${OUTPUT_FILE}" || true)
+    echo "Error compiling ${OUTPUT_FILE}!"
+    if [ -f "${ERROR_FILE}" ]; then cat "${ERROR_FILE}" >&2; fi
+  fi
+
+  sleep 0.5
+done
+
+sleep 1

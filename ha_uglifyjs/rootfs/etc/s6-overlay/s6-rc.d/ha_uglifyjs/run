@@ -7,7 +7,14 @@
 declare -a options
 declare config_path
 
-bashio::log.info 'Starting ha_compile_jinja...'
+# Declare variables
+declare js_files
+
+## Get the 'message' key from the user config options.
+js_files=$(bashio::config 'js_files')
+
+bashio::log.info 'Starting ha_uglifyjs...'
+bashio::log.info "Watching ${js_files}"
 
 # Run the code server
-exec /usr/bin/ha_compile_jinja
+exec /usr/bin/ha_uglifyjs "${js_files}"

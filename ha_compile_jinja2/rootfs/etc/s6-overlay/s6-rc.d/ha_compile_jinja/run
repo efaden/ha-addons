@@ -7,7 +7,7 @@
 declare -a options
 declare config_path
 
-bashio::log.info 'Starting ha_compile_jinja rver...'
+bashio::log.info 'Starting ha_compile_jinja...'
 
 # Run the code server
 exec /usr/bin/ha_compile_jinja
