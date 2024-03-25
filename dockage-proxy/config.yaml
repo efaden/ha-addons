@@ -1,12 +1,12 @@
 ---
-name: Node Red Proxy
+name: Dockage Proxy
 version: dev
 slug: node-red-proxy
 description: >
-  Proxy for externally running Node Red.
+  Proxy for Dockage.
 url: https://github.com/efaden/ha-addons
 codenotary: efaden@gmail.com
-panel_icon: mdi:sitemap
+panel_icon: mdi:ferry
 startup: services
 boot: "auto"
 init: true
