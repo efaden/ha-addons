@@ -1,7 +1,7 @@
 ---
 name: Dockage Proxy
 version: dev
-slug: node-red-proxy
+slug: dockage-proxy
 description: >
   Proxy for Dockage.
 url: https://github.com/efaden/ha-addons

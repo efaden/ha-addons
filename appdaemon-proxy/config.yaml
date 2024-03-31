@@ -1,12 +1,12 @@
 ---
-name: ZWave JS UI Proxy
+name: AppDaemon Proxy
 version: dev
-slug: zwave-js-ui-proxy
+slug: appdaemon-proxy
 description: >
-  Proxy for externally running ZWaveJS UI.
+  Proxy for externally running AppDaemon
 url: https://github.com/efaden/ha-addons
 codenotary: efaden@gmail.com
-panel_icon: mdi:z-wave
+panel_icon: mdi:checkbox-blank-badge
 startup: services
 boot: "auto"
 init: true
