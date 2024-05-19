@@ -2,4 +2,4 @@
 
 ## Options
 
-- `server` (required): this should be the local URL on which the Zigbee2MQTT frontend is running, e.g. `http://192.168.2.43:8080`. Make sure there is no trailing slash!
+- `server` (required): this should be the local URL on which the Portainer frontend is running, e.g. `http://192.168.2.43:8080`. Make sure there is no trailing slash!

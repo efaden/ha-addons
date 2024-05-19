@@ -47,7 +47,7 @@ http {
             allow   172.30.32.2;
             deny    all;
 
-            set     $target "{{ .server }}";
+            set $target "{{ .server }}";
 
             set $args                   $args;
             proxy_pass                  $target;
@@ -60,7 +60,7 @@ http {
 
             proxy_set_header Accept-Encoding "";
             proxy_set_header Connection $connection_upgrade;
-            proxy_set_header Host $http_host;
+            proxy_set_header Host "{{ regexReplaceAll "http(s)?://" .server "" }}";
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
